@@ -1,0 +1,12 @@
+bin/
+obj/
+# Dependency directories
+node_modules/
+
+# next.js build output
+.next
+
+# production server output
+dist
+
+Logs/
