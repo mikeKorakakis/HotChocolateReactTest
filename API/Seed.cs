@@ -24,18 +24,24 @@ namespace API
                     new AppUser
                     {
                         Id = userIds[0],
+                        FirstName = "Bob",
+                        LastName = "Smith",
                         UserName = "bob@test.com",
                         Email = "bob@test.com"
                     },
                     new AppUser
                     {
-                    Id = userIds[1],
+                        Id = userIds[1],
+                         FirstName = "Jane",
+                        LastName = "Rose",
                         UserName = "jane@test.com",
                         Email = "jane@test.com"
                     },
                     new AppUser
                     {
-                    Id = userIds[2],
+                         Id = userIds[2],
+                          FirstName = "Tom",
+                        LastName = "Simmons",
                         UserName = "tom@test.com",
                         Email = "tom@test.com"
                     },

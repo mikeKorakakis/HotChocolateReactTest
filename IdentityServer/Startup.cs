@@ -10,8 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Identity;
 using API;
 using Microsoft.EntityFrameworkCore;
-
-
+using IdentityServer4.Hosting;
 
 namespace IdentityServer
 {
@@ -41,16 +40,39 @@ namespace IdentityServer
          {
              options.SignIn.RequireConfirmedAccount = false;
          }).AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
+
+            var SpaClientUri = Configuration["SpaClientUri"];
+             services.AddCors(opt =>
+            {
+                opt.AddDefaultPolicy(policy =>
+                {
+                    policy.AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials()
+                        .WithExposedHeaders("WWW-Authenticate")
+                        .WithOrigins(SpaClientUri);
+
+                });
+            });
+
          
-            var builder = services.AddIdentityServer()
+            var builder = services.AddIdentityServer(
+                options =>{
+                    options.Endpoints.EnableUserInfoEndpoint = true;
+                    options.Endpoints.EnableDiscoveryEndpoint = true;
+                    options.Endpoints.EnableTokenEndpoint = true;
+                }
+            )
                 .AddDeveloperSigningCredential()        //This is for dev only scenarios when you don’t have a certificate to use.
                 .AddInMemoryClients(Config.Clients())
                 .AddInMemoryApiScopes(Config.ApiScopes())
+                .AddInMemoryApiResources(Config.Apis())
                 .AddInMemoryIdentityResources(Config.IdentityResources())
                 .AddAspNetIdentity<AppUser>();
             // not recommended for production - you need to store your key material somewhere secure
             builder.AddDeveloperSigningCredential();
 
+            // services.AddTransient<IEndpointRouter, CustomEndpointRouter>();
 
         }
 
@@ -64,7 +86,7 @@ namespace IdentityServer
             // uncomment if you want to add MVC
             app.UseStaticFiles();
             app.UseRouting();
-
+            app.UseCors();
             app.UseIdentityServer();
 
             // uncomment, if you want to add MVC

@@ -10,14 +10,21 @@ namespace IdentityServer
 {
     public static class Config
     {
-        public static IEnumerable<IdentityResource> IdentityResources (){
+        public static IEnumerable<IdentityResource> IdentityResources()
+        {
             return new IdentityResource[]
             {
                 new IdentityResources.OpenId(),
-                new IdentityResources.Profile ()
+                new IdentityResources.Profile()
             };
         }
 
+        public static IEnumerable<ApiResource> Apis()
+        {
+           return new ApiResource[] {
+                new ApiResource ("api1", "My API"){ Scopes = { "read", "write", "delete"}}
+                   };
+        }
         public static IEnumerable<ApiScope> ApiScopes()
         {
             return new List<ApiScope>
@@ -50,21 +57,14 @@ namespace IdentityServer
                 ClientSecrets = { new Secret ("secret".Sha256 ()) },
                 AllowOfflineAccess = true,
                 RequirePkce = false,
-                AllowedGrantTypes = { GrantType.AuthorizationCode },
-
+                AllowedGrantTypes = {GrantType.AuthorizationCode },
+                RequireClientSecret = false,
                 RequireConsent = false,
 
-                PostLogoutRedirectUris =  {client} ,
+                PostLogoutRedirectUris =  {$"{client}/signout-oidc"},
                 AllowedCorsOrigins = {client},
-
-                RedirectUris = {
-                $"{client}/api/callback",
-
-                },
-                // AccessTokenLifetime = 300,
+                RedirectUris = {$"{client}/signin-oidc"},
                 UpdateAccessTokenClaimsOnRefresh = true,
-                // AuthorizationCodeLifetime=60,
-                // IdentityTokenLifetime=60,
                 AllowedScopes = { "openid", "profile", "api1", "read", "write", "delete"  }
 
         }

@@ -3,17 +3,68 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
-import {
-    ApolloClient,
-    InMemoryCache,
-    ApolloProvider
-  } from "@apollo/client";
+import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+import { setContext } from '@apollo/client/link/context';
+import {  createHttpLink, ApolloLink} from '@apollo/client';
+import userManager from "./Components/oidc/userService";
+import { WebSocketLink } from "@apollo/client/link/ws";
+import { getOperationAST } from "graphql";
 
-  const client = new ApolloClient({
-    uri: 'http://localhost:5000/graphql',
+
+const graphqlUri = "http://localhost:5000/graphql"
+
+let link: any;
+const httpLink = createHttpLink({
+  uri: graphqlUri
+});
+
+
+const authLink = setContext(async(_, { headers }) => {
+  // get the authentication token from local storage if it exists
+//   const token = localStorage.getItem('token');
+  const user =  await userManager.getUser()
+  const token = user?.access_token;
+  // return the headers to the context so httpLink can read them
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : "",
+    }
+  }
+});
+
+let wsClient = new WebSocketLink({
+    uri: graphqlUri,
+    options: {
+        reconnect: true,
+        lazy: true,
+        connectionParams: async () => {
+            const user =  await userManager.getUser()
+            const token = user?.access_token;
+            return {authToken:  token}
+        },
+    },
+});
+
+link = ApolloLink.split(
+    (operation) => {
+        const operationAST = getOperationAST(
+            operation.query,
+            operation.operationName
+        );
+        return (
+            !!operationAST && operationAST.operation === "subscription"
+        );
+    },
+    wsClient,
+    httpLink
+);
+
+const client = new ApolloClient({
+    link: ApolloLink.from([authLink, link]),
     cache: new InMemoryCache()
   });
-
+  
 ReactDOM.render(
 	<React.StrictMode>
 		<ApolloProvider client={client}>

@@ -1,14 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using HotChocolate.AspNetCore;
+using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace API
 {
@@ -38,25 +44,78 @@ namespace API
             identityBuilder.AddEntityFrameworkStores<DataContext>();
 
             var SpaClientUri = Configuration["SpaClientUri"];
-             services.AddCors(opt =>
-            {
-                opt.AddPolicy("CorsPolicy", policy =>
-                {
-                    policy.AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials()
-                        .WithExposedHeaders("WWW-Authenticate")
-                        .WithOrigins(SpaClientUri);
+            services.AddCors(opt =>
+           {
+               opt.AddPolicy("CorsPolicy", policy =>
+               {
+                   policy.AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials()
+                       .WithExposedHeaders("WWW-Authenticate")
+                       .WithOrigins(SpaClientUri);
 
-                });
-            });
+               });
+           });
+
+            var Handler = new HttpClientHandler();
+            Handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
+            services.AddAuthentication(options =>
+           {
+               options.DefaultScheme = "Bearer";
+
+               options.DefaultAuthenticateScheme = "Bearer";
+           })
+               .AddIdentityServerAuthentication("Bearer", options =>
+               {
+                   options.ForwardDefaultSelector = context =>
+                   {
+                       if (!context.Items.ContainsKey(AuthenticationSocketInterceptor.HTTP_CONTEXT_WEBSOCKET_AUTH_KEY) &&
+                           context.Request.Headers.TryGetValue("Upgrade", out var value) &&
+                           value.Count > 0 &&
+                           value[0] is string stringValue &&
+                           stringValue == "websocket")
+                       {
+                           return "Websockets";
+                       }
+                       return "Bearer";
+                   };
+                   options.TokenRetriever = new Func<HttpRequest, string>(req =>
+                   {
+                       if (req.HttpContext.Items.TryGetValue(
+                               AuthenticationSocketInterceptor.HTTP_CONTEXT_WEBSOCKET_AUTH_KEY,
+                               out object token) &&
+                           token is string stringToken)
+                       {
+                           return stringToken;
+                       }
+                       var fromHeader = TokenRetrieval.FromAuthorizationHeader();
+                       var fromQuery = TokenRetrieval.FromQueryString(); // Query string auth
+                       return fromHeader(req) ?? fromQuery(req);
+                   });
+                   options.Authority = "https://localhost:5001";
+                   options.RequireHttpsMetadata = false;
+                   options.ApiName = "api1";
+                   options.JwtBackChannelHandler = Handler;
+
+               }).AddJwtBearer("Websockets", ctx => { });
+
+            IdentityModelEventSource.ShowPII = true;
+
+            services.AddSingleton<ISocketSessionInterceptor, AuthenticationSocketInterceptor>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services
             .AddGraphQLServer()
               .AddQueryType(d => d.Name("Query"))
                  .AddTypeExtension<UserQueries>()
-                 .AddDataLoader<UserByIdDataLoader>()
-                   .AddAuthorization()
+                 .AddTypeExtension<MessageQueries>()
+              .AddMutationType(d => d.Name("Mutation"))
+                 .AddTypeExtension<MessageMutations>()
+               .AddSubscriptionType(d => d.Name("Subscription"))
+                 .AddTypeExtension<MessageSubscriptions>()
+               .AddDataLoader<UserByIdDataLoader>()
+               .AddAuthorization()
             //   .EnableRelaySupport()
               .AddSocketSessionInterceptor<AuthenticationSocketInterceptor>();
 
@@ -76,6 +135,7 @@ namespace API
 
             app.UseRouting();
             app.UseCors("CorsPolicy");
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

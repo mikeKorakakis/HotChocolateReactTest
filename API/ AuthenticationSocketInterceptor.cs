@@ -36,7 +36,7 @@ namespace API
 
 
             HttpContext context = connection.HttpContext;
-            if (message.Payload!.TryGetValue(WEBOCKET_PAYLOAD_AUTH_KEY, out object? token) &&
+            if (message.Payload!.TryGetValue(WEBOCKET_PAYLOAD_AUTH_KEY, out object token) &&
              token is string stringToken)
             {
                 context.Items[HTTP_CONTEXT_WEBSOCKET_AUTH_KEY] = stringToken;

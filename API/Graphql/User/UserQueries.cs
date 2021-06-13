@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using HotChocolate;
+using HotChocolate.AspNetCore.Authorization;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Identity;
 
@@ -13,9 +14,10 @@ namespace API
 
     public class UserQueries
     {
-       
+
 
         [UseApplicationDbContext]
+        [Authorize]
         public async Task<IEnumerable<AppUser>> GetUsers(
                [ScopedService] DataContext context,
                [Service] UserManager<AppUser> userManager,
@@ -23,8 +25,8 @@ namespace API
                CancellationToken cancellationToken
                )
         {
-            
-              string[] userIds = {
+
+            string[] userIds = {
                 "be5cgf48-7f69-4a75-8de8-076e570bade5",
                 "38f2h820-f93f-4948-92b6-bdc283a351f1",
                 "5ae57946-8eab-42ab-8054-099b8f79c37a",
@@ -34,7 +36,7 @@ namespace API
             return users;
         }
 
-       
+
     }
 
 }
