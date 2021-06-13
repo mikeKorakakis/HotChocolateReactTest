@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using HotChocolate;
+using HotChocolate.AspNetCore.Authorization;
 using HotChocolate.Execution;
 using HotChocolate.Subscriptions;
 using HotChocolate.Types;
@@ -14,22 +15,27 @@ namespace API
 
         // [Topic]
         // [Subscribe]
+        [Authorize]
         [Subscribe(With = nameof(SubscribeToOnSendMessageAsync))]
         public Task<Message> onSendMessage(
             [Service] ITopicEventReceiver eventReceiver,
             [EventMessage] Message message,
+        [Service] IUserAccessor userAccessor,
             [Service] ILogger<MessageSubscriptions> logger
-            ) => Task.FromResult(message);
+            )
+        {
+            var userId = userAccessor.GetCurrentUsername();
+            var newMessage = new Message { Id = message.Id, Body = $"{message.Body} sent by {userId}", CreatedAt = message.CreatedAt };
+            return Task.FromResult(newMessage);
+        }
 
 
         public async ValueTask<ISourceStream<Message>> SubscribeToOnSendMessageAsync(
         [Service] ITopicEventReceiver eventReceiver,
-        [Service] IUserAccessor userAccessor,
         CancellationToken cancellationToken)
         {
-            var userId = userAccessor.GetCurrentUsername();
             return await eventReceiver.SubscribeAsync<string, Message>(
-                 $"send_message_{userId}", cancellationToken);
+                 $"send_message", cancellationToken);
         }
     }
 

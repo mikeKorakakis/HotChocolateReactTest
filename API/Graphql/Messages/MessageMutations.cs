@@ -24,7 +24,7 @@ namespace API
         public async Task<Message> CreateMessage(
             CreateMessageInput input,
             [ScopedService] DataContext context,
-            // [Service] ITopicEventSender eventSender,
+            [Service] ITopicEventSender eventSender,
             // [Service] ILogger<MessageMutations> logger,
             CancellationToken cancellationToken
             )
@@ -47,7 +47,7 @@ namespace API
             }
 
 
-            // await eventSender.SendAsync($"send_message", message, cancellationToken);
+            await eventSender.SendAsync($"send_message", message, cancellationToken);
             return message;
 
         }

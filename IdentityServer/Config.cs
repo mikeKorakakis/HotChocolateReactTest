@@ -4,7 +4,6 @@
 
 using IdentityServer4.Models;
 using System.Collections.Generic;
-using Microsoft.Extensions.Hosting;
 
 namespace IdentityServer
 {
@@ -39,22 +38,11 @@ namespace IdentityServer
         {
             var client = Startup.StaticConfig["SpaClientUri"];
             return new Client[] {
-                // client credentials flow client
-                // new Client
-                // {
-                //     ClientId = "client",
-                //     ClientName = "Client React App",
-
-                //     AllowedGrantTypes = GrantTypes.ClientCredentials,
-                //     ClientSecrets = { new Secret("secret".Sha256()) },
-
-                //     AllowedScopes = { "api1" }
-                // },
+             
                 new Client {
                 ClientId = "spa",
                 ClientName = "SPA Client",
                 ClientUri = client,
-                ClientSecrets = { new Secret ("secret".Sha256 ()) },
                 AllowOfflineAccess = true,
                 RequirePkce = false,
                 AllowedGrantTypes = {GrantType.AuthorizationCode },

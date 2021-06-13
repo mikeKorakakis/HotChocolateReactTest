@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
@@ -101,9 +102,9 @@ namespace API
                }).AddJwtBearer("Websockets", ctx => { });
 
             IdentityModelEventSource.ShowPII = true;
-
             services.AddSingleton<ISocketSessionInterceptor, AuthenticationSocketInterceptor>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<IUserAccessor, UserAccessor>();
 
             services
             .AddGraphQLServer()
@@ -115,6 +116,7 @@ namespace API
                .AddSubscriptionType(d => d.Name("Subscription"))
                  .AddTypeExtension<MessageSubscriptions>()
                .AddDataLoader<UserByIdDataLoader>()
+              .AddInMemorySubscriptions()
                .AddAuthorization()
             //   .EnableRelaySupport()
               .AddSocketSessionInterceptor<AuthenticationSocketInterceptor>();
@@ -137,6 +139,7 @@ namespace API
             app.UseCors("CorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseWebSockets();
 
             app.UseEndpoints(endpoints =>
             {

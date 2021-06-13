@@ -12,6 +12,7 @@ import { getOperationAST } from "graphql";
 
 
 const graphqlUri = "http://localhost:5000/graphql"
+const wsGraphqlUri = "ws://localhost:5000/graphql"
 
 let link: any;
 const httpLink = createHttpLink({
@@ -34,7 +35,7 @@ const authLink = setContext(async(_, { headers }) => {
 });
 
 let wsClient = new WebSocketLink({
-    uri: graphqlUri,
+    uri: wsGraphqlUri,
     options: {
         reconnect: true,
         lazy: true,

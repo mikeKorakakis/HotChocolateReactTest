@@ -12,12 +12,12 @@ using HotChocolate.Execution;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace API
 {
     public class AuthenticationSocketInterceptor : DefaultSocketSessionInterceptor
     {
-
         // This is the key to the auth token in the HTTP Context
         public static readonly string HTTP_CONTEXT_WEBSOCKET_AUTH_KEY = "websocket-auth-token";
         // This is the key that apollo uses in the connection init request
@@ -60,8 +60,9 @@ namespace API
                 var defaultAuthenticate = await _schemes.GetDefaultAuthenticateSchemeAsync();
                 if (defaultAuthenticate != null)
                 {
+                //  return (ConnectionStatus.Accept());
                     var result = await context.AuthenticateAsync(defaultAuthenticate.Name);
-                    if (result?.Principal != null)
+                    if (result.Principal != null)
                     {
                         var webSocketContext = context.RequestServices.GetService<WebSocketContext>();        
                         context.User = result.Principal;

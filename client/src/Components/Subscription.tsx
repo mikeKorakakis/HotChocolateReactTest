@@ -46,6 +46,8 @@ const useStyles = makeStyles((theme) => ({
 	grid2: {
 		width: "400px",
 		padding: "10px",
+		maxHeight: "300px",
+		overflow: "scroll",
 	},
 	paper: {
 		marginTop: theme.spacing(8),
@@ -64,18 +66,25 @@ const useStyles = makeStyles((theme) => ({
 	submit: {
 		margin: theme.spacing(3, 0, 2),
 	},
+	sub: {
+        width: "280px",
+		padding: "10px",
+        overflow: "scroll"
+	},
 }));
 
 const Subscription: React.FC<SubscriptionProps> = () => {
 	const classes = useStyles();
 	const [display, setDisplay] = useState<any[]>();
-	const [input, setInput] = useState<string>();
+	const [input, setInput] = useState<string>("");
 	const { loading, error, data: messages } = useQuery(MESSAGES);
 	const [createMessage, { data }] = useMutation(CREATE_MESSAGE);
 	const {
-		data: messageSent,
+		data: onSendMessage,
+		error: subError,
 		loading: loadingSubscription,
 	} = useSubscription(MESSAGE_SUBSCRIPTION);
+	if (subError) console.log(subError);
 	useEffect(() => {
 		setDisplay(
 			loading ? ["loading"] : error ? [error.message] : messages.messages
@@ -110,12 +119,27 @@ const Subscription: React.FC<SubscriptionProps> = () => {
 						variant="contained"
 						color="primary"
 						className={classes.submit}
-						onClick={() =>
-							createMessage({ variables: { body: input } })
-						}
+						onClick={() => {
+							createMessage({ variables: { body: input } });
+							setInput("");
+						}}
 					>
 						Send
 					</Button>
+					{!loadingSubscription && (
+						<>
+							<h4>this comes from subscription</h4>
+							<Card className={classes.sub}>
+								<span
+									style={{ fontWeight: "bold" }}
+								>{`${onSendMessage.onSendMessage.body}`}</span>
+								<span>{"  -->  "}</span>
+								<span style={{ color: "red" }}>{`${new Date(
+									onSendMessage.onSendMessage.createdAt
+								).toDateString()}`}</span>
+							</Card>
+						</>
+					)}
 				</Grid>
 				<Card className={classes.grid2}>
 					{display?.map((item: any, key: number) => (
