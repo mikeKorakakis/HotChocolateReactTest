@@ -56,13 +56,7 @@ namespace IdentityServer
             });
 
          
-            var builder = services.AddIdentityServer(
-                options =>{
-                    options.Endpoints.EnableUserInfoEndpoint = true;
-                    options.Endpoints.EnableDiscoveryEndpoint = true;
-                    options.Endpoints.EnableTokenEndpoint = true;
-                }
-            )
+            var builder = services.AddIdentityServer()
                 .AddDeveloperSigningCredential()        //This is for dev only scenarios when you don’t have a certificate to use.
                 .AddInMemoryClients(Config.Clients())
                 .AddInMemoryApiScopes(Config.ApiScopes())
